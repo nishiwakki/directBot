@@ -3,18 +3,13 @@
 const fs = require('fs');
 const readline = require('readline');
 const {google} = require('googleapis');
-
-// If modifying these scopes, delete credentials.json.
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
 const TOKEN_PATH = 'credentials.json';
 
 module.exports = (robot) => {
-
   robot.respond(/CAL$/i, (res) => {
     const content = fs.readFileSync('client_secret.json');
-
     authorize(JSON.parse(content), (auth) => {
-
       const sheets = google.sheets({version: 'v4', auth});
       sheets.spreadsheets.values.get({
         spreadsheetId: '1_t7FLELQ6T08TYRI9F5cA3YFpbA0baVXOO8plMCr1jo',
@@ -23,7 +18,9 @@ module.exports = (robot) => {
         if (err) {
           return console.log('The API returned an error: ' + err);
         }
+        // spreadsheets data -> result
         const rows = result.data.values;
+        // display on direct -> results
         var results = "";
         if (rows.length) {
           rows.map((row) => {
@@ -34,11 +31,8 @@ module.exports = (robot) => {
         }
         res.send(results);
       });
-
     });
-
   });
-
 };
 
 
