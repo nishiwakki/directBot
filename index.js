@@ -10,12 +10,12 @@ const content = fs.readFileSync('client_secret.json');
 module.exports = (robot) => {
 
   robot.join((res) => {
-    res.send(`ne270235によるBOTです。startと送信してみてください！`);
+    res.send(`重要課題通知BOTです。startと送信してみてください！`);
   });
 
   robot.respond(/start$/i, (res) => {
     res.send({
-      question: "現在溜まっている課題を表示します。2つの観点から項目を選んでください。",
+      question: "2つの観点から項目を選んでください。",
       options: ["締切間近", "重要度"],
     });
   });
@@ -40,7 +40,7 @@ module.exports = (robot) => {
             if (rows.length > 0) {
               rows.map((row) => {
                 // [0]年 [1]月 [2]日 [3]曜日 [4]時 [5]分 [6]年 [7]課題内容 [8]優先度
-                dates.push([new Date(row[0], row[1], row[2], row[4], row[5], 0), row[3], row[6], row[7], row[8]]);
+                dates.push([new Date(row[0], (row[1]- 1), row[2], row[4], row[5], 0), row[3], row[6], row[7], row[8]]);
               });
             } else {
               console.log('No data found.');
@@ -93,7 +93,7 @@ module.exports = (robot) => {
             var dates = [];
             if (rows.length > 0) {
               rows.map((row) => {
-                dates.push([new Date(row[0], row[1], row[2], row[4], row[5], 0), row[3], row[6], row[7], row[8]]);
+                dates.push([new Date(row[0], (row[1]- 1), row[2], row[4], row[5], 0), row[3], row[6], row[7], row[8]]);
               });
             } else {
               console.log('No data found.');
@@ -140,10 +140,11 @@ module.exports = (robot) => {
 // "2018-08-13T04:05:00.000Z"表記を変換する関数（曜日だけ別対応）
 function formatDate(date, weekdays) {
   var year = date.getFullYear();
-  var month = date.getMonth();
+  var month = date.getMonth() + 1;
   var day = date.getDate();;
   var weekday = weekdays;
   var hour = date.getHours();
+  // 00表記を可能にする
   var minute = ("0" + date.getMinutes()).slice(-2);
   return `${year}年${month}月${day}日(${weekday}) ${hour}:${minute}`;
 }
