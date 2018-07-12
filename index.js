@@ -58,7 +58,8 @@ module.exports = (robot) => {
         if ((rows.length == 1) && (nowdate < dates[0][0])){
           results += `期限：${formatDate(dates[0][0], dates[0][1])}\n`;
           results += `講義：${dates[0][2]}\n`;
-          results += `内容：${dates[0][3]}`;
+          results += `内容：${dates[0][3]}\n`;
+          results += `優先度：${dates[0][4]}`;;
         }
         // 課題が2つ以上あるとき
         if (rows.length > 1) {
@@ -67,7 +68,8 @@ module.exports = (robot) => {
             if((nowdate < dates[i][0]) && (flag == 0)){
               results += `期限：${formatDate(dates[i][0], dates[i][1])}\n`;
               results += `講義：${dates[i][2]}\n`;
-              results += `内容：${dates[i][3]}`;;
+              results += `内容：${dates[i][3]}\n`;;
+              results += `優先度：${dates[i][4]}`;;
               flag = 1;
             }
           }
@@ -77,7 +79,7 @@ module.exports = (robot) => {
     });
   });
 
-  robot.respond(/danger$/i, (res) => {
+  robot.respond(/must$/i, (res) => {
     var results = "";
     authorize(JSON.parse(content), (auth) => {
       const sheets = google.sheets({version: 'v4', auth});
@@ -103,7 +105,7 @@ module.exports = (robot) => {
         // datesを昔順に並べ替える
         dates.sort(
           function(a, b){
-            return (a[0] < b[0] ? -1 : 1);
+            return (a[4] < b[4] ? -1 : 1);
           }
         );
         // 今現在の日時を取得
@@ -112,17 +114,26 @@ module.exports = (robot) => {
         if ((rows.length == 1) && (nowdate < dates[0][0])){
           results += `期限：${formatDate(dates[0][0], dates[0][1])}\n`;
           results += `講義：${dates[0][2]}\n`;
-          results += `内容：${dates[0][3]}`;
+          results += `内容：${dates[0][3]}\n`;
+          results += `優先度：${dates[0][4]}`;
         }
+
         // 課題が2つ以上あるとき
         if (rows.length > 1) {
           var flag = 0;
           for (var i = 0 ; i < rows.length ; i++){
-            if((nowdate < dates[i][0]) && (flag == 0)){
+            if ((nowdate < dates[i][0]) && (flag == 0)){
               results += `期限：${formatDate(dates[i][0], dates[i][1])}\n`;
               results += `講義：${dates[i][2]}\n`;
-              results += `内容：${dates[i][3]}`;;
+              results += `内容：${dates[i][3]}\n`;
+              results += `優先度：${dates[i][4]}`;
               flag = 1;
+              // 同じ優先度が2つ以上ある時の対応
+              if (dates[i][4] == dates[i+1][4]){
+                results += `\n`;
+                results += `-------------------------------------\n`;
+                flag = 0;
+              }
             }
           }
         }
