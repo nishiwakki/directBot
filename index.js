@@ -9,6 +9,11 @@ const content = fs.readFileSync('client_secret.json');
 
 module.exports = (robot) => {
 
+  // PING-PONG
+  robot.respond(/ping$/i, (res) => {
+    res.send(`PONG`);
+  });
+
   robot.join((res) => {
     res.send(`重要課題通知BOTです。startと送信してみてください！`);
   });
@@ -21,18 +26,21 @@ module.exports = (robot) => {
   });
 
   robot.respond("select", (res) => {
+    // switch文で選択肢を分ける
     switch (res.json.options[res.json.response]) {
       case "締切間近":
         var results = "";
         authorize(JSON.parse(content), (auth) => {
           const sheets = google.sheets({version: 'v4', auth});
           sheets.spreadsheets.values.get({
+            // 取得したい課題情報が乗っているスプレッドシートのURLから
             spreadsheetId: '1_t7FLELQ6T08TYRI9F5cA3YFpbA0baVXOO8plMCr1jo',
-            range: 'A3:I',
+            range: 'A3:I', // 必要な情報が載っている部分のスプレッドシート範囲（A3からI列目にかけて）
           }, (err, result) => {
             if (err) {
               return console.log('The API returned an error: ' + err);
             }
+            // 得た課題情報は列の各課題ごとに格納
             const rows = result.data.values;
             // 多次元配列([提出期限, 課題内容])
             var dates = [];
@@ -40,12 +48,13 @@ module.exports = (robot) => {
             if (rows.length > 0) {
               rows.map((row) => {
                 // [0]年 [1]月 [2]日 [3]曜日 [4]時 [5]分 [6]年 [7]課題内容 [8]優先度
+                // 月だけ"0"originのため取得した月から-1をする。あとで戻す
                 dates.push([new Date(row[0], (row[1]- 1), row[2], row[4], row[5], 0), row[3], row[6], row[7], row[8]]);
               });
             } else {
               console.log('No data found.');
             }
-            // datesを昔順に並べ替える
+            // datesを昔順に並べ替える(小さい順)
             dates.sort(
               function(a, b){
                 return (a[0] < b[0] ? -1 : 1);
@@ -53,7 +62,7 @@ module.exports = (robot) => {
             );
             // 今現在の日時を取得
             var nowdate = new Date();
-            // 課題が1つしかないとき
+            // 課題が1つしかないとき && nowdateより未来のとき
             if ((rows.length == 1) && (nowdate < dates[0][0])){
               results += `期限：${formatDate(dates[0][0], dates[0][1])}\n`;
               results += `講義：${dates[0][2]}\n`;
@@ -62,6 +71,7 @@ module.exports = (robot) => {
             }
             // 課題が2つ以上あるとき
             if (rows.length > 1) {
+              // flagを立てて表示数制限
               var flag = 0;
               for (var i = 0 ; i < rows.length ; i++){
                 if((nowdate < dates[i][0]) && (flag == 0)){
@@ -69,7 +79,7 @@ module.exports = (robot) => {
                   results += `講義：${dates[i][2]}\n`;
                   results += `内容：${dates[i][3]}\n`;;
                   results += `優先度：${dates[i][4]}`;;
-                  flag = 1;
+                  flag = 1; // ループ脱出
                 }
               }
             }
@@ -100,6 +110,7 @@ module.exports = (robot) => {
             }
             dates.sort(
               function(a, b){
+                // 優先度はdatesの[i][4]番目に格納されている
                 return (a[4] < b[4] ? -1 : 1);
               }
             );
@@ -120,7 +131,7 @@ module.exports = (robot) => {
                   results += `内容：${dates[i][3]}\n`;
                   results += `優先度：${dates[i][4]}`;
                   flag = 1;
-                  // 同じ優先度が2つ以上ある時の対応
+                  // 同じ優先度が2つ以上あるときの対応 flagを0に戻す
                   if (dates[i][4] == dates[i+1][4]){
                     results += `\n`;
                     results += `-------------------------------------\n`;
@@ -142,6 +153,7 @@ function formatDate(date, weekdays) {
   var year = date.getFullYear();
   var month = date.getMonth() + 1;
   var day = date.getDate();;
+  // 曜日だけ直接代入
   var weekday = weekdays;
   var hour = date.getHours();
   // 00表記を可能にする
